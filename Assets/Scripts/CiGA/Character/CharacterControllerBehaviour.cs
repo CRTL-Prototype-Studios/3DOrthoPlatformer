@@ -32,6 +32,16 @@ namespace CiGA.Character
             if (!Input) Input = GetComponent<CharacterControllerInput>();
         }
 
+        protected void Update()
+        {
+            MovementCore();
+        }
+
+        protected void FixedUpdate()
+        {
+            MovementTickCore();
+        }
+
         #region Core Functions
         protected void MovementCore()
         {
@@ -49,6 +59,11 @@ namespace CiGA.Character
         public void Jump()
         {
             Rigidbody.AddForce(Vector3.up * jumpFactor, ForceMode.Impulse);
+        }
+
+        public void Push()
+        {
+            
         }
         #endregion
         
@@ -68,6 +83,11 @@ namespace CiGA.Character
         {
             if (IsGrounded)
                 Jump();
+        }
+
+        public void ListenPush(InputAction.CallbackContext context)
+        {
+            Push();
         }
         #endregion
     }
