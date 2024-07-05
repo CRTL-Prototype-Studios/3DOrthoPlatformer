@@ -31,6 +31,9 @@ namespace CiGA.Character
         }
 
         private float _move = 0f, _moveTarget = 0f;
+        private Rigidbody _heldObject;
+        private Vector3 _holdOffset;
+        
         protected void Awake()
         {
             if (!Rigidbody) Rigidbody = GetComponent<Rigidbody>();
@@ -79,7 +82,7 @@ namespace CiGA.Character
                 // Release the object when the button is released
                 ReleaseObject();
             }
-            else if (context.performed && heldObject != null)
+            else if (context.performed && _heldObject != null)
             {
                 // Continue pushing while the button is held
                 PushHeldObject();
@@ -91,32 +94,32 @@ namespace CiGA.Character
             RaycastHit hit;
             if (Physics.Raycast(transform.position, transform.right, out hit, pushDistance, pushableLayers))
             {
-                heldObject = hit.rigidbody;
-                if (heldObject != null)
+                _heldObject = hit.rigidbody;
+                if (_heldObject != null)
                 {
-                    holdOffset = heldObject.transform.position - transform.position;
-                    holdOffset = Vector3.ProjectOnPlane(holdOffset, Vector3.forward);
+                    _holdOffset = _heldObject.transform.position - transform.position;
+                    _holdOffset = Vector3.ProjectOnPlane(_holdOffset, Vector3.forward);
                 }
             }
         }
 
         private void ReleaseObject()
         {
-            heldObject = null;
+            _heldObject = null;
         }
 
         private void PushHeldObject()
         {
-            if (heldObject != null)
+            if (_heldObject != null)
             {
-                Vector3 targetPosition = transform.position + holdOffset;
-                Vector3 pushDirection = (targetPosition - heldObject.position);
+                Vector3 targetPosition = transform.position + _holdOffset;
+                Vector3 pushDirection = (targetPosition - _heldObject.position);
                 
                 // Apply force to move the object towards the hold position
-                heldObject.AddForce(pushDirection * pushForce, ForceMode.Force);
+                _heldObject.AddForce(pushDirection * pushForce, ForceMode.Force);
                 
                 // Limit the velocity to prevent the object from moving too fast
-                heldObject.velocity = Vector3.ClampMagnitude(heldObject.velocity, speed * 1.2f);
+                _heldObject.velocity = Vector3.ClampMagnitude(_heldObject.velocity, speed * 1.2f);
             }
         }
         #endregion
@@ -143,8 +146,6 @@ namespace CiGA.Character
         {
             Push(context);
         }
-
-        #endregion
 
         private void OnDrawGizmos()
         {
