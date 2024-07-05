@@ -18,8 +18,13 @@ namespace CiGA.Character
         [Header("Attributes")] [SerializeField]
         private float groundCheckRadius = 1f;
         [SerializeField] private float speed = 4f;
-
         [SerializeField, MinValue(0)] private float jumpFactor = 7f;
+        
+        [Header("Push Mechanics")]
+        [SerializeField] private float pushDistance = 1.5f;
+        [SerializeField] private float pushForce = 10f;
+        [SerializeField] private LayerMask pushableLayers;
+        
         public bool IsGrounded
         {
             get { return Physics.CheckSphere(GroundCheck.position, groundCheckRadius, GroundMask); }
@@ -62,9 +67,57 @@ namespace CiGA.Character
             Rigidbody.AddForce(Vector3.up * jumpFactor, ForceMode.Impulse);
         }
 
-        public void Push()
+        public void Push(InputAction.CallbackContext context)
         {
-            
+            if (context.started)
+            {
+                // Try to grab an object when the button is first pressed
+                TryGrabObject();
+            }
+            else if (context.canceled)
+            {
+                // Release the object when the button is released
+                ReleaseObject();
+            }
+            else if (context.performed && heldObject != null)
+            {
+                // Continue pushing while the button is held
+                PushHeldObject();
+            }
+        }
+
+        private void TryGrabObject()
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, transform.right, out hit, pushDistance, pushableLayers))
+            {
+                heldObject = hit.rigidbody;
+                if (heldObject != null)
+                {
+                    holdOffset = heldObject.transform.position - transform.position;
+                    holdOffset = Vector3.ProjectOnPlane(holdOffset, Vector3.forward);
+                }
+            }
+        }
+
+        private void ReleaseObject()
+        {
+            heldObject = null;
+        }
+
+        private void PushHeldObject()
+        {
+            if (heldObject != null)
+            {
+                Vector3 targetPosition = transform.position + holdOffset;
+                Vector3 pushDirection = (targetPosition - heldObject.position);
+                
+                // Apply force to move the object towards the hold position
+                heldObject.AddForce(pushDirection * pushForce, ForceMode.Force);
+                
+                // Limit the velocity to prevent the object from moving too fast
+                heldObject.velocity = Vector3.ClampMagnitude(heldObject.velocity, speed * 1.2f);
+            }
         }
         #endregion
         
@@ -88,7 +141,16 @@ namespace CiGA.Character
 
         public void ListenPush(InputAction.CallbackContext context)
         {
-            Push();
+            Push(context);
+        }
+
+        #endregion
+
+        private void OnDrawGizmos()
+        {
+            // Visualize push distance
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(transform.position, transform.right * pushDistance);
         }
         #endregion
     }
