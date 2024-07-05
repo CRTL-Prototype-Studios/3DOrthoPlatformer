@@ -17,6 +17,7 @@ namespace CiGA.Character
 
         [Header("Attributes")] [SerializeField]
         private float groundCheckRadius = 1f;
+        [SerializeField] private float speed = 4f;
 
         [SerializeField, MinValue(0)] private float jumpFactor = 7f;
         public bool IsGrounded
@@ -45,7 +46,7 @@ namespace CiGA.Character
         #region Core Functions
         protected void MovementCore()
         {
-            Rigidbody.velocity = new Vector3(_move, Rigidbody.velocity.y, 0);
+            Rigidbody.velocity = new Vector3(_move * speed, Rigidbody.velocity.y, 0);
         }
 
         protected void MovementTickCore()
