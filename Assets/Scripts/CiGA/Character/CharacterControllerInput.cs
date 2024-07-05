@@ -17,13 +17,17 @@ namespace CiGA.Character
         protected void OnEnable()
         {
             _map.Enable();
-            
+            _map.Primary.Movement.performed += Controller.ListenMovementPerformed;
+            _map.Primary.Movement.canceled += Controller.ListenMovementCancelled;
+            _map.Primary.Jump.performed += Controller.ListenJump;
         }
 
         protected void OnDisable()
         {
             _map.Disable();
-            
+            _map.Primary.Movement.performed -= Controller.ListenMovementPerformed;
+            _map.Primary.Movement.canceled -= Controller.ListenMovementCancelled;
+            _map.Primary.Jump.performed -= Controller.ListenJump;
         }
     }
 }
