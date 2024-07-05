@@ -1,10 +1,8 @@
-using System;
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace CiGAGJ2024.SceneControls
+namespace CiGA.SceneControls
 {
     public class MainMenuScene : MonoBehaviour
     {

@@ -1,11 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
-using CiGAGJ2024.Utility;
+using CiGA.Utility;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace CiGAGJ2024.SceneControls
+namespace CiGA.SceneControls
 {
     public class SceneController : Singleton<SceneController>
     {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace CiGAGJ2024.Utility
+namespace CiGA.Utility
 {
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {

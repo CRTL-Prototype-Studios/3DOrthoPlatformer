@@ -2,7 +2,7 @@ using JetBrains.Annotations;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace CiGAGJ2024.SceneControls
+namespace CiGA.SceneControls
 {
     /// <summary>
     /// For managing the scene events in every level scene
