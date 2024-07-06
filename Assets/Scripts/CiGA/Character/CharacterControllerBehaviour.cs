@@ -2,6 +2,7 @@ using System;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace CiGA.Character
 {
@@ -13,6 +14,7 @@ namespace CiGA.Character
         [SerializeField] protected Collider Collider;
         [SerializeField] protected CharacterControllerInput Input;
         [SerializeField] protected Transform GroundCheck;
+        [SerializeField] protected CharacterBallHolder BallHolder;
         [SerializeField] protected LayerMask GroundMask;
 
         [Header("Attributes")] [SerializeField]
@@ -22,23 +24,28 @@ namespace CiGA.Character
         
         [Header("Push Mechanics")]
         [SerializeField] private float pushDistance = 1.5f;
-        [SerializeField] private float pushForce = 10f;
-        [SerializeField] private LayerMask pushableLayers;
+        [SerializeField] private float maxPushForce = 10f;
+        [SerializeField] public LayerMask pushableLayers;
+        [SerializeField] private float aimedAngle = 0f;
         
         public bool IsGrounded
         {
             get { return Physics.CheckSphere(GroundCheck.position, groundCheckRadius, GroundMask); }
         }
+        public bool IsHolding { get; set; }
 
         private float _move = 0f, _moveTarget = 0f;
         private Rigidbody _heldObject;
         private Vector3 _holdOffset;
+        private RigidbodyConstraints _initialConstraint;
         
         protected void Awake()
         {
             if (!Rigidbody) Rigidbody = GetComponent<Rigidbody>();
             if (!Collider) Collider = GetComponent<Collider>();
             if (!Input) Input = GetComponent<CharacterControllerInput>();
+
+            _initialConstraint = Rigidbody.constraints;
         }
 
         protected void Update()
@@ -70,34 +77,34 @@ namespace CiGA.Character
             Rigidbody.AddForce(Vector3.up * jumpFactor, ForceMode.Impulse);
         }
 
-        public void Push(InputAction.CallbackContext context)
+        public void Push()
         {
-            if (context.started)
+            TryGrabObject();
+            if (_heldObject)
             {
-                // Try to grab an object when the button is first pressed
-                TryGrabObject();
-            }
-            else if (context.canceled)
-            {
-                // Release the object when the button is released
+                Vector3 targetPosition = transform.position + _holdOffset;
+                Vector3 pushDirection = (targetPosition - _heldObject.position);
+                
+                // Apply force to move the object towards the hold position
+                float clampedForce = Math.Clamp(maxPushForce, 0, maxPushForce * Mathf.Cos(aimedAngle));
+                _heldObject.AddForce(pushDirection * clampedForce, ForceMode.Impulse);
+                
                 ReleaseObject();
-            }
-            else if (context.performed && _heldObject != null)
-            {
-                // Continue pushing while the button is held
-                PushHeldObject();
             }
         }
 
         private void TryGrabObject()
         {
             RaycastHit hit;
-            if (Physics.Raycast(transform.position, transform.right, out hit, pushDistance, pushableLayers))
+            if (Physics.Raycast(BallHolder.transform.position, BallHolder.transform.right, out hit, pushDistance, pushableLayers))
             {
                 _heldObject = hit.rigidbody;
-                if (_heldObject != null)
+                if (_heldObject)
                 {
-                    _holdOffset = _heldObject.transform.position - transform.position;
+                    Debug.Log("Grabbed");
+                    Vector3 temp = _heldObject.transform.position - transform.position;
+                    temp.x += 0.5f;
+                    _holdOffset = temp;
                     _holdOffset = Vector3.ProjectOnPlane(_holdOffset, Vector3.forward);
                 }
             }
@@ -108,19 +115,10 @@ namespace CiGA.Character
             _heldObject = null;
         }
 
-        private void PushHeldObject()
+        public void OnBallHolderCollide()
         {
-            if (_heldObject != null)
-            {
-                Vector3 targetPosition = transform.position + _holdOffset;
-                Vector3 pushDirection = (targetPosition - _heldObject.position);
-                
-                // Apply force to move the object towards the hold position
-                _heldObject.AddForce(pushDirection * pushForce, ForceMode.Force);
-                
-                // Limit the velocity to prevent the object from moving too fast
-                _heldObject.velocity = Vector3.ClampMagnitude(_heldObject.velocity, speed * 1.2f);
-            }
+            IsHolding = true;
+            Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
         }
         #endregion
         
@@ -129,11 +127,15 @@ namespace CiGA.Character
         public void ListenMovementPerformed(InputAction.CallbackContext context)
         {
             _moveTarget = context.ReadValue<float>();
+            BallHolder.gameObject.SetActive(true);
         }
 
         public void ListenMovementCancelled(InputAction.CallbackContext context)
         {
             _moveTarget = 0f;
+            BallHolder.gameObject.SetActive(false);
+            IsHolding = false;
+            Rigidbody.constraints = _initialConstraint;
         }
 
         public void ListenJump(InputAction.CallbackContext context)
@@ -142,9 +144,21 @@ namespace CiGA.Character
                 Jump();
         }
 
-        public void ListenPush(InputAction.CallbackContext context)
+        public void ListenPushPerformed(InputAction.CallbackContext context)
         {
-            Push(context);
+            Push();
+        }
+
+        public void ListenPushCanceled(InputAction.CallbackContext context)
+        {
+            
+        }
+
+        public void ListenDirectionPerformed(InputAction.CallbackContext context)
+        {
+            Vector2 vec = context.ReadValue<Vector2>();
+            if (vec.x < 0) return;
+            aimedAngle = Mathf.Tan(Mathf.Clamp(Mathf.Abs(vec.y), 0, 1) / Mathf.Clamp(Mathf.Abs(vec.x), 0, 1)) * Mathf.Rad2Deg;
         }
 
         private void OnDrawGizmos()
@@ -152,6 +166,21 @@ namespace CiGA.Character
             // Visualize push distance
             Gizmos.color = Color.yellow;
             Gizmos.DrawRay(transform.position, transform.right * pushDistance);
+        }
+        
+        public float CalculateSlopeForce()
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, 2))
+            {
+                Vector3 slopeNormal = hit.normal;
+                float slopeAngle = Vector3.Angle(slopeNormal, Vector3.up);
+                float angleFromPerpendicular = 90f - slopeAngle;
+                
+                return slopeAngle;
+            }
+
+            return 0f;
         }
         #endregion
     }

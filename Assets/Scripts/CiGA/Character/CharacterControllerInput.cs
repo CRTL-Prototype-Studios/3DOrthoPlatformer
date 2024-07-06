@@ -20,7 +20,9 @@ namespace CiGA.Character
             _map.Primary.Movement.performed += Controller.ListenMovementPerformed;
             _map.Primary.Movement.canceled += Controller.ListenMovementCancelled;
             _map.Primary.Jump.performed += Controller.ListenJump;
-            _map.Primary.Push.performed += Controller.ListenPush;
+            _map.Primary.Push.performed += Controller.ListenPushPerformed;
+            _map.Primary.Push.canceled += Controller.ListenPushCanceled;
+            _map.Primary.Direction.performed += Controller.ListenDirectionPerformed;
         }
 
         protected void OnDisable()
@@ -29,7 +31,9 @@ namespace CiGA.Character
             _map.Primary.Movement.performed -= Controller.ListenMovementPerformed;
             _map.Primary.Movement.canceled -= Controller.ListenMovementCancelled;
             _map.Primary.Jump.performed -= Controller.ListenJump;
-            _map.Primary.Push.performed -= Controller.ListenPush;
+            _map.Primary.Push.performed -= Controller.ListenPushPerformed;
+            _map.Primary.Push.canceled -= Controller.ListenPushCanceled;
+            _map.Primary.Direction.performed -= Controller.ListenDirectionPerformed;
         }
     }
 }

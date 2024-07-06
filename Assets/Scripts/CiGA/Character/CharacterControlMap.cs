@@ -53,6 +53,15 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": ""Hold"",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Direction"",
+                    ""type"": ""Value"",
+                    ""id"": ""451c46ad-034f-4f72-af27-594042deef5d"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -198,6 +207,61 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
                     ""action"": ""Push"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Pad"",
+                    ""id"": ""35a54e8b-f59d-4686-a99c-8db58733a80a"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Direction"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""62c69862-3ac2-497b-82c4-1d9258be1d46"",
+                    ""path"": ""<Gamepad>/rightStick/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Direction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""49a4de3d-1c2c-4be7-9a8c-814e6159f8a3"",
+                    ""path"": ""<Gamepad>/rightStick/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Direction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""178b8764-f1bd-4efa-b9ea-4678f4ee4001"",
+                    ""path"": ""<Gamepad>/rightStick/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Direction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""ab6c805e-a3fe-4930-bf7f-65a306713df2"",
+                    ""path"": ""<Gamepad>/rightStick/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Direction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -209,6 +273,7 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
         m_Primary_Movement = m_Primary.FindAction("Movement", throwIfNotFound: true);
         m_Primary_Jump = m_Primary.FindAction("Jump", throwIfNotFound: true);
         m_Primary_Push = m_Primary.FindAction("Push", throwIfNotFound: true);
+        m_Primary_Direction = m_Primary.FindAction("Direction", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -273,6 +338,7 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
     private readonly InputAction m_Primary_Movement;
     private readonly InputAction m_Primary_Jump;
     private readonly InputAction m_Primary_Push;
+    private readonly InputAction m_Primary_Direction;
     public struct PrimaryActions
     {
         private @CharacterControlMap m_Wrapper;
@@ -280,6 +346,7 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
         public InputAction @Movement => m_Wrapper.m_Primary_Movement;
         public InputAction @Jump => m_Wrapper.m_Primary_Jump;
         public InputAction @Push => m_Wrapper.m_Primary_Push;
+        public InputAction @Direction => m_Wrapper.m_Primary_Direction;
         public InputActionMap Get() { return m_Wrapper.m_Primary; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -298,6 +365,9 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
             @Push.started += instance.OnPush;
             @Push.performed += instance.OnPush;
             @Push.canceled += instance.OnPush;
+            @Direction.started += instance.OnDirection;
+            @Direction.performed += instance.OnDirection;
+            @Direction.canceled += instance.OnDirection;
         }
 
         private void UnregisterCallbacks(IPrimaryActions instance)
@@ -311,6 +381,9 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
             @Push.started -= instance.OnPush;
             @Push.performed -= instance.OnPush;
             @Push.canceled -= instance.OnPush;
+            @Direction.started -= instance.OnDirection;
+            @Direction.performed -= instance.OnDirection;
+            @Direction.canceled -= instance.OnDirection;
         }
 
         public void RemoveCallbacks(IPrimaryActions instance)
@@ -333,5 +406,6 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
         void OnMovement(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnPush(InputAction.CallbackContext context);
+        void OnDirection(InputAction.CallbackContext context);
     }
 }
