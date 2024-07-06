@@ -51,7 +51,7 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
                     ""id"": ""c45c6d4a-36c8-479c-bc10-d75b29c3a4d8"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
-                    ""interactions"": ""Hold"",
+                    ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
@@ -167,7 +167,7 @@ public partial class @CharacterControlMap: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""73c1f639-57c8-4ef4-903f-3cfe2966a61a"",
-                    ""path"": ""<Mouse>/leftButton"",
+                    ""path"": ""<Keyboard>/space"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

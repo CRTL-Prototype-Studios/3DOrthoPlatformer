@@ -33,11 +33,12 @@ namespace CiGA.Character
             get { return Physics.CheckSphere(GroundCheck.position, groundCheckRadius, GroundMask); }
         }
         public bool IsHolding { get; set; }
+        public bool CanHold { get; set; } = true;
 
         private float _move = 0f, _moveTarget = 0f;
         private Rigidbody _heldObject;
         private Vector3 _holdOffset;
-        private RigidbodyConstraints _initialConstraint;
+        private RigidbodyConstraints _initialConstraint, _otherConstraint;
         
         protected void Awake()
         {
@@ -79,6 +80,8 @@ namespace CiGA.Character
 
         public void Push()
         {
+            // TryGrabObject();
+            Debug.Log($"{_heldObject}, Push");
             TryGrabObject();
             if (_heldObject)
             {
@@ -87,7 +90,7 @@ namespace CiGA.Character
                 
                 // Apply force to move the object towards the hold position
                 float clampedForce = Math.Clamp(maxPushForce, 0, maxPushForce * Mathf.Cos(aimedAngle));
-                _heldObject.AddForce(pushDirection * clampedForce, ForceMode.Impulse);
+                _heldObject.AddForce(CalculateSlopeDirection(aimedAngle) * maxPushForce, ForceMode.Impulse);
                 
                 ReleaseObject();
             }
@@ -95,18 +98,11 @@ namespace CiGA.Character
 
         private void TryGrabObject()
         {
+            if (_heldObject) return;
             RaycastHit hit;
             if (Physics.Raycast(BallHolder.transform.position, BallHolder.transform.right, out hit, pushDistance, pushableLayers))
             {
                 _heldObject = hit.rigidbody;
-                if (_heldObject)
-                {
-                    Debug.Log("Grabbed");
-                    Vector3 temp = _heldObject.transform.position - transform.position;
-                    temp.x += 0.5f;
-                    _holdOffset = temp;
-                    _holdOffset = Vector3.ProjectOnPlane(_holdOffset, Vector3.forward);
-                }
             }
         }
 
@@ -115,10 +111,22 @@ namespace CiGA.Character
             _heldObject = null;
         }
 
-        public void OnBallHolderCollide()
+        public void OnBallHolderCollide(Collision other)
         {
+            if (!CanHold) return;
             IsHolding = true;
             Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+            _heldObject = other.rigidbody;
+            _heldObject.velocity = Vector3.zero;
+            Debug.Log("Holding");
+        }
+        
+        public void OnBallHolderExit(Collision other)
+        {
+            Rigidbody otherRigid = other.gameObject.GetComponent<Rigidbody>();
+            otherRigid.constraints = _otherConstraint;
+            ReleaseObject();
+            Debug.Log("Holding");
         }
         #endregion
         
@@ -128,6 +136,9 @@ namespace CiGA.Character
         {
             _moveTarget = context.ReadValue<float>();
             BallHolder.gameObject.SetActive(true);
+            // if(Physics.ComputePenetration(BallHolder.Collider, BallHolder.transform.position, BallHolder.transform.rotation,
+            //        colliderB, transformB.position, transformB.rotation,
+            //        out direction, out distance))
         }
 
         public void ListenMovementCancelled(InputAction.CallbackContext context)
@@ -182,6 +193,49 @@ namespace CiGA.Character
 
             return 0f;
         }
+        
+        private Vector3 CalculateSlopeDirection(float slopeAngleDegrees)
+        {
+            // Clamp the angle between 0 and 90 degrees
+            slopeAngleDegrees = Mathf.Clamp(slopeAngleDegrees, -90f, 90f);
+
+            // Convert degrees to radians
+            float slopeAngleRadians = slopeAngleDegrees * Mathf.Deg2Rad;
+            
+            return new Vector3(Mathf.Cos(slopeAngleRadians), Mathf.Sin(slopeAngleRadians), 0);
+        }
         #endregion
+
+        private void OnCollisionEnter(Collision other)
+        {
+            // Debug.Log($"Fuck my life {other.gameObject.layer}, {pushableLayers.value}");
+            if (other.collider.CompareTag("Pushable"))
+            {
+                OnBallHolderCollide(other);
+            }
+        }
+
+        private void OnCollisionExit(Collision other)
+        {
+            if (other.collider.CompareTag("Pushable"))
+            {
+                OnBallHolderExit(other);
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.CompareTag("Pushable"))
+            {
+                CanHold = false;
+            }
+        }
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.gameObject.CompareTag("Pushable"))
+            {
+                CanHold = true;
+            }
+        }
     }
 }
